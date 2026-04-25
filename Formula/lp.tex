@@ -1,0 +1,94 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\title{Operations Research Midterm: Fleet Management Time-Space Network}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Problem Parameters}
+\begin{itemize}
+    \item $n_s$ : number of stations
+    \item $n_c$ : total number of cars (fleet size)
+    \item $n_L$ : number of car levels
+    \item $n_K$ : total number of orders from customers
+    \item $n_D$ : number of operating days (from 00:00 Day 1 to 24:00 Day $n_D$)
+    \item $T_{ij}$ : transportation time of a car from station $i$ to station $j$ (in minutes, multiple of 30)
+    \item $F_l$ : hourly rental rate of a level $l$ car
+    \item $H_o$ : number of hours rented by order $o$
+    \item $B$ : maximum total number of empty car movements allowed by workers
+\end{itemize}
+
+\section*{Mathematical Formulation}
+
+\subsection*{1. Sets and Indices}
+\begin{itemize}
+    \item $S$: Set of stations, indexed by $s, i, j \in \{1, \dots, n_s\}$
+    \item $T$: Set of time periods, indexed by $t \in \{1, \dots, 48n_D\}$ (where 1 period = 30 minutes)
+    \item $L$: Set of car levels, indexed by $l \in \{1, \dots, n_L\}$
+    \item $O$: Set of customer orders, indexed by $o \in \{1, \dots, n_K\}$
+    \item $\text{Start}(s, t, l)$: Set of orders requiring a level $l$ car ready at station $s$ at time $t$
+    \item $\text{End}(s, t, l)$: Set of orders returning a level $l$ car to station $s$ that becomes available at time $t$
+\end{itemize}
+
+\subsection*{2. Decision Variables}
+\begin{itemize}
+    \item $I_{s, t, l} \in \mathbb{Z}^+$ : Number of idle cars of level $l$ at station $s$ at the end of time period $t$.
+    \item $F_{i, j, t, l} \in \mathbb{Z}^+$ : Number of empty cars of level $l$ moved from station $i$ to station $j$ starting at time $t$.
+    \item $X_{o}^{exact} \in \{0, 1\}$ : 1 if order $o$ is fulfilled exactly by a car of its requested level $L_o$, 0 otherwise.
+    \item $X_{o}^{up} \in \{0, 1\}$ : 1 if order $o$ is fulfilled by a free upgrade to a level $L_o + 1$ car, 0 otherwise.
+\end{itemize}
+
+\subsection*{3. Objective Function}
+We seek to maximize the total revenue generated from fulfilled customer orders minus the penalty for rejected orders:
+\begin{equation}
+\max \sum_{o \in O} F_{L_o} H_o \left(3X_o^{exact} + 3X_o^{up} - 2\right)
+\end{equation}
+
+\subsection*{4. Constraints}
+
+\textbf{Order Fulfillment Logic:} \\
+Ensures an order is fulfilled at most once, either exactly, via an upgrade, or rejected (if both are 0).
+\begin{equation}
+X_{o}^{exact} + X_{o}^{up} \leq 1 \quad \forall o \in O
+\end{equation}
+
+\vspace{0.5em}
+\textbf{Flow Conservation (Time-Space Network Balance):} \\
+Ensures the inventory of cars at each station is correctly balanced over time, accounting for exact matches and upgrades.
+\begin{align}
+I_{s, t, l} = I_{s, t - 1, l} &+ \sum_{i \in S, i \neq s} F_{i, s, t - \frac{T_{is}}{30}, l} - \sum_{j \in S, j \neq s} F_{s, j, t, l} \nonumber \\
+&+ \sum_{o \in \text{End}(s,t,l)} X_o^{exact} + \sum_{o \in \text{End}(s,t,l-1)} X_o^{up} \nonumber \\
+&- \sum_{o \in \text{Start}(s,t,l)} X_o^{exact} - \sum_{o \in \text{Start}(s,t,l-1)} X_o^{up} \quad \forall s \in S, t \in T, l \in L
+\end{align}
+
+\vspace{0.5em}
+\textbf{Worker Relocation Budget Limit:} \\
+Ensures the total number of empty cars moved by workers across the entire operational horizon does not exceed the capacity limit $B$.
+\begin{equation}
+\sum_{t \in T} \sum_{l \in L} \sum_{i \in S} \sum_{j \in S, j \neq i} F_{i, j, t, l} \leq B
+\end{equation}
+
+\vspace{0.5em}
+\textbf{Worker Relocation Budget Limit:} \\
+Upgrade option should not exceed the maximum level limit (i.e., no upgrades beyond level $n_L$).
+\begin{equation}
+X_o^{up} = 0 \quad \forall o \in O \text{ with } L_o = n_L
+\end{equation}
+
+
+\vspace{0.5em}
+\textbf{Variable Domains:} \\
+Ensures physical quantities are strictly non-negative and logical decisions are binary.
+\begin{align}
+I_{s, t, l} &\geq 0 \quad \forall s \in S, t \in T \cup \{0\}, l \in L \\
+F_{i, j, t, l} &\geq 0 \quad \forall i, j \in S, t \in T, l \in L \\
+X_{o}^{exact}, X_{o}^{up} &\in \{0, 1\} \quad \forall o \in O
+\end{align}
+
+\end{document}
