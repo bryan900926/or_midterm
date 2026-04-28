@@ -8,7 +8,9 @@ from datetime import datetime
 from gurobipy import GRB
 
 
-os.environ["GRB_LICENSE_FILE"] = r"C:\Users\bryan\gurobi.lic" # Set the path to your Gurobi license file
+os.environ["GRB_LICENSE_FILE"] = (
+    r"\gurobi.lic" 
+)
 
 
 @dataclass
@@ -32,7 +34,7 @@ starting_time = datetime(2023, 1, 1, 0, 0)
 T = None
 
 # parsing the txt file
-with open(dir + "/data/instance04.txt", "r") as f:
+with open(dir + "/data/instance05.txt", "r") as f:
     # red the first two line
     paras_symbol = f.readline().strip().split(",")
     paras_val = f.readline().strip().split(",")
